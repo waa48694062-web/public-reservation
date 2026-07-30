@@ -1,1 +1,93 @@
-<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>公共施設予約</title><script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script></head><body><h2>公共施設予約（Netlify版）</h2><p>土台ファイルです。</p><script>liff.init({liffId:"2010895948-lvy0bgTt"}).catch(console.error);</script></body></html>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LIFFテスト</title>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <style>
+    body{
+      font-family:sans-serif;
+      padding:30px;
+      line-height:1.8;
+    }
+    pre{
+      background:#f4f4f4;
+      padding:15px;
+      border-radius:8px;
+      white-space:pre-wrap;
+      word-break:break-all;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>LIFFテスト</h2>
+
+<pre id="result">読み込み中...</pre>
+
+<script>
+
+const LIFF_ID = "2010895948-lvy0bgTt";
+
+async function main(){
+
+  const out=document.getElementById("result");
+
+  try{
+
+    out.textContent="LIFF初期化中...";
+
+    await liff.init({
+      liffId:LIFF_ID
+    });
+
+    out.textContent+="\n初期化成功";
+
+    if(!liff.isLoggedIn()){
+
+      out.textContent+="\nログインします";
+
+      liff.login();
+
+      return;
+
+    }
+
+    const profile=await liff.getProfile();
+
+    out.textContent=
+`✅ LIFF成功
+
+表示名：
+${profile.displayName}
+
+userId：
+${profile.userId}`;
+
+  }
+
+  catch(e){
+
+    out.textContent=
+`❌ エラー
+
+${e.message}
+
+${JSON.stringify(e,null,2)}`;
+
+    console.error(e);
+
+  }
+
+}
+
+main();
+
+</script>
+
+</body>
+</html>
