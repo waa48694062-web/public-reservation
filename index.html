@@ -1,93 +1,232 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LIFFテスト</title>
 
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    body{
-      font-family:sans-serif;
-      padding:30px;
-      line-height:1.8;
-    }
-    pre{
-      background:#f4f4f4;
-      padding:15px;
-      border-radius:8px;
-      white-space:pre-wrap;
-      word-break:break-all;
-    }
-  </style>
+<title>公共施設予約</title>
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+<style>
+
+body{
+    font-family:sans-serif;
+    max-width:500px;
+    margin:30px auto;
+    padding:20px;
+}
+
+h2{
+    text-align:center;
+}
+
+label{
+    display:block;
+    margin-top:18px;
+    font-weight:bold;
+}
+
+input,textarea{
+    width:100%;
+    padding:10px;
+    font-size:16px;
+    box-sizing:border-box;
+}
+
+button{
+    width:100%;
+    margin-top:30px;
+    padding:14px;
+    font-size:18px;
+    cursor:pointer;
+}
+
+#loading{
+
+    background:#fff3cd;
+    border:1px solid #ffeeba;
+    padding:12px;
+    border-radius:6px;
+    margin-bottom:20px;
+
+}
+
+</style>
+
 </head>
 
 <body>
 
-<h2>LIFFテスト</h2>
+<div id="loading">
 
-<pre id="result">読み込み中...</pre>
+LINEと接続しています...
+
+</div>
+
+<h2>公共施設予約</h2>
+
+<label>お名前</label>
+<input id="name">
+
+<label>電話番号</label>
+<input id="tel">
+
+<label>利用日</label>
+<input type="date" id="date">
+
+<label>利用時間</label>
+<input id="time">
+
+<label>利用目的</label>
+<textarea id="purpose"></textarea>
+
+<button onclick="save()">
+予約する
+</button>
 
 <script>
 
-const LIFF_ID = "2010895948-lvy0bgTt";
+const GAS_URL =
+"https://script.google.com/macros/s/AKfycbzzrnXQYZzwGXYAtw6vL_Az80oVtLbdgTHYQI2ZDLJ3TYJYG5yI_y_Q0VfSMTgYaJqVKw/exec";
 
-async function main(){
+const LIFF_ID =
+"2010895948-lvy0bgTt";
 
-  const out=document.getElementById("result");
+let profile=null;
 
-  try{
+async function init(){
 
-    out.textContent="LIFF初期化中...";
+    try{
 
-    await liff.init({
-      liffId:LIFF_ID
-    });
+        await liff.init({
 
-    out.textContent+="\n初期化成功";
+            liffId:LIFF_ID
 
-    if(!liff.isLoggedIn()){
+        });
 
-      out.textContent+="\nログインします";
+        if(!liff.isLoggedIn()){
 
-      liff.login();
+            liff.login();
 
-      return;
+            return;
+
+        }
+
+        profile=await liff.getProfile();
+
+        document.getElementById("loading").innerHTML=
+        "こんにちは <b>"+profile.displayName+"</b> さん";
+
+        document.getElementById("name").value=
+        profile.displayName;
 
     }
 
-    const profile=await liff.getProfile();
+    catch(err){
 
-    out.textContent=
-`✅ LIFF成功
+        document.getElementById("loading").innerHTML=
+        "LIFFエラー<br>"+err;
 
-表示名：
-${profile.displayName}
+        console.error(err);
 
-userId：
-${profile.userId}`;
-
-  }
-
-  catch(e){
-
-    out.textContent=
-`❌ エラー
-
-${e.message}
-
-${JSON.stringify(e,null,2)}`;
-
-    console.error(e);
-
-  }
+    }
 
 }
 
-main();
+window.onload=init;
+
+function save(){
+
+    if(profile==null){
+
+        alert("LINEの読み込みが終わっていません");
+
+        return;
+
+    }
+
+    const data={
+
+        displayName:profile.displayName,
+
+        userId:profile.userId,
+
+        tel:document.getElementById("tel").value,
+
+        date:document.getElementById("date").value,
+
+        time:document.getElementById("time").value,
+
+        purpose:document.getElementById("purpose").value
+
+    };
+    fetch(GAS_URL,{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify(data)
+
+    })
+
+    .then(res=>res.json())
+
+    .then(result=>{
+
+        if(result.success){
+
+            alert(
+
+                "予約が完了しました！\n\n予約番号：" +
+
+                result.reservationNo
+
+            );
+
+            if(liff.isInClient()){
+
+                liff.closeWindow();
+
+            }
+
+        }
+
+        else{
+
+            alert(
+
+                "エラー\n\n"+
+
+                result.error
+
+            );
+
+        }
+
+    })
+
+    .catch(err=>{
+
+        console.error(err);
+
+        alert(
+
+            "通信エラー\n\n"+err
+
+        );
+
+    });
+
+}
 
 </script>
 
 </body>
+
 </html>
